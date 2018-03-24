@@ -22,14 +22,22 @@ fn connection_handler(mut stream: TcpStream) {
 
     println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
 
-    let mut file = File::open("index.html").unwrap();
+    let request = b"GET / HTTP/1.1\r\n";
 
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
+    if (buffer.starts_with(request)) {
+        let mut file = File::open("index.html").unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+        let response = format!("HTTP/1.1 200 OK\r\n\r\n{}", contents);
+        stream.write(response.as_bytes()).unwrap();
+        stream.flush().unwrap();
+    } else {
+        let mut error_file = File::open("teapot.html").unwrap();
+        let mut error = String::new();
+        error_file.read_to_string(&mut error).unwrap();
+        let response = format!("HTTP/1.1 418 I'm a teapot\r\n\r\n{}", error);
 
-    let response = format!("HTTP/1.1 200 OK\r\n\r\n{}", contents);
-
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
-
+        stream.write(response.as_bytes()).unwrap();
+        stream.flush().unwrap();
+    }
 }
